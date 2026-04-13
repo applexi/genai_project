@@ -1,0 +1,16 @@
+{
+  "requested_total": 500,
+  "written_total": 500,
+  "general_count": 250,
+  "medical_count": 250,
+  "technique_count": 5,
+  "per_technique_per_domain": 50,
+  "output_file": "/Users/aprillexi/Desktop/cmu_programming/gen-AI/project/data/data.jsonl",
+  "techniques": [
+    "knowledge_gaps_underspecified",
+    "combine_fact_and_fiction",
+    "press_beyond_limits",
+    "creative_or_speculative",
+    "prompt_engineering_instruction"
+  ]
+}

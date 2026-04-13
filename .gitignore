@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+
+data/*.json
+data/*.jsonl
+!data/data_summary.json
+!data/data.jsonl
