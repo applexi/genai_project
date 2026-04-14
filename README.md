@@ -5,6 +5,8 @@ This project uses local `Ollama` with `Qwen2.5-3B-Instruct` to:
 1. generate general hallucination prompts
 2. generate medical hallucination prompts
 3. merge them into a balanced dataset
+4. run the multi-agent OVON hallucination pipeline
+5. analyze the resulting scores and plots
 
 ## Setup
 
@@ -96,6 +98,47 @@ python3 data/generate_general.py --workers 6
 python3 data/generate_medical.py --workers 6
 python3 preprocess_data.py 500
 ```
+
+## Run The OVON Pipeline
+
+After creating `data/data.jsonl`, run the multi-agent pipeline:
+
+```bash
+python3 agentic_hallucination_300_YES_OVON.py --workers 6
+```
+
+Default outputs:
+
+- `data/pipeline_results_with_ths.csv`
+- `pipeline.log`
+
+Notes:
+
+- This script uses local Ollama by default at `http://127.0.0.1:11434/v1`
+- It uses `qwen2.5:3b-instruct` for all agents
+- Prompt processing is parallelized across prompts, while the three agent stages remain sequential within each prompt
+
+## Analyze OVON Results
+
+After the pipeline finishes, generate the plots and stats:
+
+```bash
+python3 analyze_agentic_hallucination_300_YES_OVON.py
+```
+
+Default outputs:
+
+- `plots/all/...`
+- `plots/medical/...`
+- `plots/general/...`
+
+Each subset folder contains:
+
+- line and bar plots
+- reduction plots
+- `stats.txt`
+
+The analysis script also verifies that `prompt_id` in `data/pipeline_results_with_ths.csv` matches the corresponding prompt order in `data/data.jsonl` before splitting results into `all`, `medical`, and `general`.
 
 ## Troubleshooting
 

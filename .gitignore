@@ -6,3 +6,5 @@ data/*.json
 data/*.jsonl
 !data/data_summary.json
 !data/data.jsonl
+
+pipeline.log

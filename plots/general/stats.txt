@@ -1,0 +1,16 @@
+Subset: General
+Row count: 250
+
+Total Hallucination Scores (General):
+FrontEndAgent (THS1): -5.25
+SecondLevelReviewer (THS2): -6.42
+ThirdLevelReviewer (THS3): -6.67
+
+Percentage Reductions (General):
+Reduction (1st_agent -> 2nd_agent): 22.22%
+Reduction (2nd_agent -> 3rd_agent): 3.90%
+Reduction (1st_agent -> 3rd_agent): 26.98%
+
+Percentage Reductions (General):
+(1st_agent -> 2nd_agent): 22.22%
+(1st_agent -> 3rd_agent): 26.98%
