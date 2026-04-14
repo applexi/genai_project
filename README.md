@@ -123,7 +123,7 @@ Notes:
 After the pipeline finishes, generate the plots and stats:
 
 ```bash
-python3 analyze_agentic_hallucination_300_YES_OVON.py
+python3 analyze_hallucinations.py
 ```
 
 Default outputs:
