@@ -1,18 +1,4 @@
 #!/usr/bin/env python3
-"""
-Build (or resume building) a local FAISS index over MedRAG HuggingFace subsets
-using `nomic-embed-text` served by Ollama.
-
-Design:
-- Streams the dataset record-by-record (no need to materialize the full split).
-- Skips records whose node IDs are already in the persisted docstore, so the
-  script is resumable: kill it with Ctrl-C and re-run to pick up where it left off.
-- Persists to `data/medrag_index/` every --checkpoint-every nodes.
-
-Typical usage:
-    python3 build_medrag_index.py --subsets textbooks
-    python3 build_medrag_index.py --subsets textbooks statpearls --checkpoint-every 5000
-"""
 from __future__ import annotations
 
 import argparse

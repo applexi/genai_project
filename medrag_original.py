@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-OVON pipeline wired to the local MedRAG retriever.
-
-This replaces the previous GeoSI-based flow. For medical prompts, the pipeline
-retrieves from a local FAISS index over MedRAG textbooks (built via
-`build_medrag_index.py`) and has the front-end answer grounded in those
-passages before proceeding through the OVON reviewer chain.
-"""
 from __future__ import annotations
 
 import argparse

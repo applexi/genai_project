@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-Nomic-aware OllamaEmbedding wrapper.
-
-The `nomic-embed-text` model expects task-specific prefixes:
-  - "search_document: ..."  for corpus chunks being indexed
-  - "search_query: ..."     for user queries at retrieval time
-
-Without the prefix, retrieval quality measurably degrades. This wrapper
-transparently adds the prefixes and L2-normalizes outputs so FAISS
-`IndexFlatIP` gives cosine similarity directly.
-"""
 from __future__ import annotations
 
 from typing import List

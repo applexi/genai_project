@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-Local MedRAG runtime client.
-
-Loads the persisted FAISS index built by `build_medrag_index.py`, retrieves
-top-k passages for a query via Ollama embeddings, and generates an answer
-with the same local Ollama chat model used elsewhere in the pipeline.
-
-Exposes `MedRAG.answer(*, prompt, search_query, prompt_id) -> (text, status, top_score)`,
-matching the contract previously used by the GeoSI client so it plugs into
-the OVON orchestrator.
-"""
 from __future__ import annotations
 
 import logging
