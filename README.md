@@ -1,4 +1,4 @@
-# Local Qwen Pipeline
+# Multi-Agent Hallucination Mitigation Pipeline
 
 This project uses local `Ollama` with `Qwen2.5-3B-Instruct` to:
 
