@@ -1,0 +1,10 @@
+openai
+numpy
+pandas
+matplotlib
+seaborn
+datasets
+faiss-cpu
+llama-index-core
+llama-index-embeddings-ollama
+llama-index-vector-stores-faiss

@@ -2,9 +2,10 @@
 __pycache__/
 *.pyc
 
-data/*.json
-data/*.jsonl
+data/*
+!data/*.py
 !data/data_summary.json
 !data/data.jsonl
+!data/*.csv
 
-pipeline.log
+plots/old/

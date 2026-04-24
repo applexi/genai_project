@@ -6,11 +6,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from ovon_config import DEFAULT_PROMPTS_PATH
 
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_PROMPTS_PATH = ROOT / "data" / "data.jsonl"
-DEFAULT_RESULTS_CSV = ROOT / "data" / "pipeline_results_with_ths.csv"
 DEFAULT_PLOTS_DIR = ROOT / "plots"
 
 
@@ -21,8 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--results-csv",
         type=Path,
-        default=DEFAULT_RESULTS_CSV,
-        help="Path to the pipeline results CSV.",
+        required=True,
+        help="Path to the pipeline results CSV (example: original_results.csv or medrag_original_results.csv).",
     )
     parser.add_argument(
         "--prompts",
@@ -41,6 +40,10 @@ def parse_args() -> argparse.Namespace:
 
 def load_results(results_csv: Path) -> pd.DataFrame:
     return pd.read_csv(results_csv)
+
+
+def resolve_results_plots_dir(base_plots_dir: Path, results_csv: Path) -> Path:
+    return base_plots_dir / results_csv.stem
 
 
 def load_prompt_records(prompts_path: Path) -> list[dict]:
@@ -109,6 +112,29 @@ def write_stats_file(output_path: Path, lines: list[str]) -> None:
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def normalize_routed_to_medrag(series: pd.Series) -> pd.Series:
+    return series.map(
+        lambda value: str(value).strip().lower() in {"true", "1", "yes"}
+        if pd.notna(value)
+        else False
+    )
+
+
+def append_top_score_summary(stats_lines: list[str], df_results: pd.DataFrame) -> None:
+    if "top score" not in df_results.columns:
+        return
+
+    top_scores = pd.to_numeric(df_results["top score"], errors="coerce")
+    non_null_top_scores = top_scores.dropna()
+    stats_lines.append("")
+    stats_lines.append("MedRAG Top Score Summary:")
+    stats_lines.append(f"Recorded top score count: {int(non_null_top_scores.notna().sum())}")
+    if non_null_top_scores.empty:
+        stats_lines.append("Average top score: n/a")
+        return
+    stats_lines.append(f"Average top score: {non_null_top_scores.mean():.3f}")
+
+
 def build_melted_results(df_results: pd.DataFrame) -> pd.DataFrame:
     df_melted = pd.melt(
         df_results,
@@ -150,7 +176,7 @@ def plot_line_chart(df_results: pd.DataFrame, plots_dir: Path, subset_label: str
 def plot_grouped_bar_sorted_by_ths1(
     df_results: pd.DataFrame, plots_dir: Path, subset_label: str
 ) -> None:
-    df_sorted = df_results.sort_values(by="THS1", ascending=True)
+    df_sorted = df_results.sort_values(by="THS1", ascending=False)
     df_melted = build_melted_results(df_sorted)
     plt.figure(figsize=(14, 8))
     sns.barplot(
@@ -204,17 +230,17 @@ def plot_grouped_bar_sorted_within_prompt(
 
 def total_ths_variant_one(df_results: pd.DataFrame) -> dict[str, float]:
     return {
-        "1st_Agent (THS1)": df_results["THS1"].sum(),
-        "2nd_Reviewer (THS2)": df_results["THS2"].sum(),
-        "3rd_Reviewer (THS3)": df_results["THS3"].sum(),
+        "1st_Agent (THS1)": df_results["THS1"].mean(),
+        "2nd_Reviewer (THS2)": df_results["THS2"].mean(),
+        "3rd_Reviewer (THS3)": df_results["THS3"].mean(),
     }
 
 
 def total_ths_variant_two(df_results: pd.DataFrame) -> dict[str, float]:
     return {
-        "FrontEndAgent (THS1)": df_results["THS1"].sum(),
-        "SecondLevelReviewer (THS2)": df_results["THS2"].sum(),
-        "ThirdLevelReviewer (THS3)": df_results["THS3"].sum(),
+        "FrontEndAgent (THS1)": df_results["THS1"].mean(),
+        "SecondLevelReviewer (THS2)": df_results["THS2"].mean(),
+        "ThirdLevelReviewer (THS3)": df_results["THS3"].mean(),
     }
 
 
@@ -232,9 +258,9 @@ def plot_total_ths_annotated(df_results: pd.DataFrame, plots_dir: Path, subset_l
             fontsize=12,
             color="black",
         )
-    plt.title(f"Total Hallucination Score by Agent ({subset_label})", fontsize=16)
+    plt.title(f"Average Total Hallucination Score by Agent ({subset_label})", fontsize=16)
     plt.xlabel("Agent", fontsize=14)
-    plt.ylabel("Total Hallucination Score", fontsize=14)
+    plt.ylabel("Average Total Hallucination Score", fontsize=14)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.grid(axis="y")
@@ -245,48 +271,48 @@ def plot_total_ths_simple(df_results: pd.DataFrame, plots_dir: Path, subset_labe
     total_ths = total_ths_variant_two(df_results)
     plt.figure(figsize=(8, 6))
     plt.bar(total_ths.keys(), total_ths.values(), color=["blue", "orange", "green"])
-    plt.title(f"Total Hallucination Score by Agent ({subset_label})", fontsize=16)
+    plt.title(f"Average Total Hallucination Score by Agent ({subset_label})", fontsize=16)
     plt.xlabel("Agent", fontsize=14)
-    plt.ylabel("Total Hallucination Score", fontsize=14)
+    plt.ylabel("Average Total Hallucination Score", fontsize=14)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.grid(axis="y")
     save_plot(plots_dir / "05_total_ths_simple.png")
 
 
-def calculate_percentage_reduction_all(total_ths: dict[str, float]) -> dict[str, float]:
+def calculate_percentage_ths_improvement_all(total_ths: dict[str, float]) -> dict[str, float]:
     ths1 = total_ths["FrontEndAgent (THS1)"]
     ths2 = total_ths["SecondLevelReviewer (THS2)"]
     ths3 = total_ths["ThirdLevelReviewer (THS3)"]
     return {
-        "Reduction (1st_agent -> 2nd_agent)": ((ths1 - ths2) / abs(ths1)) * 100,
-        "Reduction (2nd_agent -> 3rd_agent)": ((ths2 - ths3) / abs(ths2)) * 100,
-        "Reduction (1st_agent -> 3rd_agent)": ((ths1 - ths3) / abs(ths1)) * 100,
+        "Improvement (1st_agent -> 2nd_agent)": ((ths2 - ths1) / abs(ths1)) * 100,
+        "Improvement (2nd_agent -> 3rd_agent)": ((ths3 - ths2) / abs(ths2)) * 100,
+        "Improvement (1st_agent -> 3rd_agent)": ((ths3 - ths1) / abs(ths1)) * 100,
     }
 
 
-def calculate_percentage_reduction_frontend_paths(
+def calculate_percentage_ths_improvement_frontend_paths(
     total_ths: dict[str, float],
 ) -> dict[str, float]:
     ths1 = total_ths["FrontEndAgent (THS1)"]
     ths2 = total_ths["SecondLevelReviewer (THS2)"]
     ths3 = total_ths["ThirdLevelReviewer (THS3)"]
     return {
-        "(1st_agent -> 2nd_agent)": ((ths1 - ths2) / abs(ths1)) * 100,
-        "(1st_agent -> 3rd_agent)": ((ths1 - ths3) / abs(ths1)) * 100,
+        "(1st_agent -> 2nd_agent)": ((ths2 - ths1) / abs(ths1)) * 100,
+        "(1st_agent -> 3rd_agent)": ((ths3 - ths1) / abs(ths1)) * 100,
     }
 
 
-def plot_percentage_reductions(
-    reductions: dict[str, float],
+def plot_percentage_improvements(
+    improvements: dict[str, float],
     plots_dir: Path,
     filename: str,
     colors: list[str],
     rotation: int,
     subset_label: str,
 ) -> None:
-    labels = list(reductions.keys())
-    values = list(reductions.values())
+    labels = list(improvements.keys())
+    values = list(improvements.values())
     plt.figure(figsize=(10, 6))
     plt.bar(labels, values, color=colors)
     for idx, value in enumerate(values):
@@ -298,14 +324,90 @@ def plot_percentage_reductions(
             fontsize=12,
             color="black",
         )
-    plt.title(f"Percentage Reduction in Hallucination Scores ({subset_label})", fontsize=16)
-    plt.xlabel("Reduction Path", fontsize=14)
-    plt.ylabel("Percentage Reduction (%)", fontsize=14)
+    plt.title(
+        f"Percentage Improvement in Average Total Hallucination Scores ({subset_label})",
+        fontsize=16,
+    )
+    plt.xlabel("Improvement Path", fontsize=14)
+    plt.ylabel("Percentage Improvement (%)", fontsize=14)
     plt.xticks(fontsize=12, rotation=rotation)
     plt.yticks(fontsize=12)
     plt.axhline(0, color="gray", linestyle="--", linewidth=1)
     plt.grid(axis="y", linestyle="--", alpha=0.7)
     save_plot(plots_dir / filename)
+
+
+def append_stats_summary(stats_lines: list[str], df_results: pd.DataFrame, subset_label: str) -> None:
+    total_ths = total_ths_variant_two(df_results)
+    stats_lines.append(f"Average Total Hallucination Scores ({subset_label}):")
+    improvements_all = calculate_percentage_ths_improvement_all(total_ths)
+    for label, value in total_ths.items():
+        stats_lines.append(f"{label}: {value:.2f}")
+
+    append_top_score_summary(stats_lines, df_results)
+
+    stats_lines.append("")
+    stats_lines.append(f"Percentage Improvements ({subset_label}):")
+    for label, value in improvements_all.items():
+        stats_lines.append(f"{label}: {value:.2f}%")
+
+    improvements_frontend = calculate_percentage_ths_improvement_frontend_paths(total_ths)
+    stats_lines.append("")
+    stats_lines.append(f"Percentage Improvements ({subset_label}):")
+    for label, value in improvements_frontend.items():
+        stats_lines.append(f"{label}: {value:.2f}%")
+
+
+def append_medrag_conditioned_stats(
+    stats_lines: list[str], df_results: pd.DataFrame, subset_label: str
+) -> None:
+    if "routed_to_medrag" not in df_results.columns:
+        return
+
+    df_with_route = df_results.copy()
+    df_with_route["routed_to_medrag_normalized"] = normalize_routed_to_medrag(
+        df_with_route["routed_to_medrag"]
+    )
+
+    conditioned_subsets = [
+        ("Routed to MedRAG", df_with_route[df_with_route["routed_to_medrag_normalized"]].copy()),
+        (
+            "Not Routed to MedRAG",
+            df_with_route[~df_with_route["routed_to_medrag_normalized"]].copy(),
+        ),
+    ]
+
+    if "source_domain" in df_with_route.columns:
+        present_domains = [
+            source_domain
+            for source_domain in ("general", "medical")
+            if (df_with_route["source_domain"] == source_domain).any()
+        ]
+        for source_domain in present_domains:
+            for routed_value, routed_label in (
+                (True, "Routed to MedRAG"),
+                (False, "Not Routed to MedRAG"),
+            ):
+                conditioned_subsets.append(
+                    (
+                        f"{source_domain.title()} + {routed_label}",
+                        df_with_route[
+                            (df_with_route["source_domain"] == source_domain)
+                            & (df_with_route["routed_to_medrag_normalized"] == routed_value)
+                        ].copy(),
+                    )
+                )
+
+    stats_lines.append("")
+    stats_lines.append(f"MedRAG Route-Conditioned Statistics ({subset_label}):")
+    for condition_label, conditioned_df in conditioned_subsets:
+        stats_lines.append("")
+        stats_lines.append(f"Condition: {condition_label}")
+        stats_lines.append(f"Row count: {len(conditioned_df)}")
+        if conditioned_df.empty:
+            stats_lines.append("Skipped because the conditioned subset is empty.")
+            continue
+        append_stats_summary(stats_lines, conditioned_df, f"{subset_label} | {condition_label}")
 
 
 def run_analysis_for_subset(
@@ -325,46 +427,47 @@ def run_analysis_for_subset(
     plot_total_ths_simple(df_results, subset_plots_dir, subset_label)
 
     total_ths = total_ths_variant_two(df_results)
-    print(f"Total Hallucination Scores ({subset_label}):")
-    stats_lines.append(f"Total Hallucination Scores ({subset_label}):")
-    reductions_all = calculate_percentage_reduction_all(total_ths)
+    print(f"Average Total Hallucination Scores ({subset_label}):")
+    stats_lines.append(f"Average Total Hallucination Scores ({subset_label}):")
+    improvements_all = calculate_percentage_ths_improvement_all(total_ths)
     for label, value in total_ths.items():
         line = f"{label}: {value:.2f}"
         print(line)
         stats_lines.append(line)
 
-    print(f"Percentage Reductions ({subset_label}):")
+    print(f"Percentage Improvements ({subset_label}):")
     stats_lines.append("")
-    stats_lines.append(f"Percentage Reductions ({subset_label}):")
-    for label, value in reductions_all.items():
+    stats_lines.append(f"Percentage Improvements ({subset_label}):")
+    for label, value in improvements_all.items():
         line = f"{label}: {value:.2f}%"
         print(line)
         stats_lines.append(line)
-    plot_percentage_reductions(
-        reductions_all,
+    plot_percentage_improvements(
+        improvements_all,
         subset_plots_dir,
-        "06_percentage_reductions_all.png",
+        "06_percentage_improvements_all.png",
         ["blue", "orange", "green"],
         15,
         subset_label,
     )
 
-    reductions_frontend = calculate_percentage_reduction_frontend_paths(total_ths)
-    print(f"Percentage Reductions ({subset_label}):")
+    improvements_frontend = calculate_percentage_ths_improvement_frontend_paths(total_ths)
+    print(f"Percentage Improvements ({subset_label}):")
     stats_lines.append("")
-    stats_lines.append(f"Percentage Reductions ({subset_label}):")
-    for label, value in reductions_frontend.items():
+    stats_lines.append(f"Percentage Improvements ({subset_label}):")
+    for label, value in improvements_frontend.items():
         line = f"{label}: {value:.2f}%"
         print(line)
         stats_lines.append(line)
-    plot_percentage_reductions(
-        reductions_frontend,
+    plot_percentage_improvements(
+        improvements_frontend,
         subset_plots_dir,
-        "07_percentage_reductions_frontend_paths.png",
+        "07_percentage_improvements_frontend_paths.png",
         ["green", "orange", "blue"],
         0,
         subset_label,
     )
+    append_medrag_conditioned_stats(stats_lines, df_results, subset_label)
     write_stats_file(subset_plots_dir / "stats.txt", stats_lines)
 
 
@@ -372,21 +475,22 @@ def main() -> int:
     args = parse_args()
     df_results = load_results(args.results_csv)
     df_results = attach_prompt_metadata(df_results, args.prompts)
+    results_plots_dir = resolve_results_plots_dir(args.plots_dir, args.results_csv)
 
-    run_analysis_for_subset(df_results, args.plots_dir, "all", "All")
+    run_analysis_for_subset(df_results, results_plots_dir, "all", "All")
     run_analysis_for_subset(
         df_results[df_results["source_domain"] == "medical"].copy(),
-        args.plots_dir,
+        results_plots_dir,
         "medical",
         "Medical",
     )
     run_analysis_for_subset(
         df_results[df_results["source_domain"] == "general"].copy(),
-        args.plots_dir,
+        results_plots_dir,
         "general",
         "General",
     )
-    print(f"Plots saved to {args.plots_dir}")
+    print(f"Plots saved to {results_plots_dir}")
     return 0
 
 

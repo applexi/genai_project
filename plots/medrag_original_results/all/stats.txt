@@ -1,0 +1,138 @@
+Subset: All
+Row count: 500
+
+Average Total Hallucination Scores (All):
+FrontEndAgent (THS1): 6.09
+SecondLevelReviewer (THS2): 6.89
+ThirdLevelReviewer (THS3): 6.97
+
+Percentage Improvements (All):
+Improvement (1st_agent -> 2nd_agent): 13.11%
+Improvement (2nd_agent -> 3rd_agent): 1.12%
+Improvement (1st_agent -> 3rd_agent): 14.37%
+
+Percentage Improvements (All):
+(1st_agent -> 2nd_agent): 13.11%
+(1st_agent -> 3rd_agent): 14.37%
+
+MedRAG Route-Conditioned Statistics (All):
+
+Condition: Routed to MedRAG
+Row count: 224
+Average Total Hallucination Scores (All | Routed to MedRAG):
+FrontEndAgent (THS1): 6.15
+SecondLevelReviewer (THS2): 6.98
+ThirdLevelReviewer (THS3): 6.99
+
+MedRAG Top Score Summary:
+Recorded top score count: 224
+Average top score: 0.754
+
+Percentage Improvements (All | Routed to MedRAG):
+Improvement (1st_agent -> 2nd_agent): 13.50%
+Improvement (2nd_agent -> 3rd_agent): 0.16%
+Improvement (1st_agent -> 3rd_agent): 13.68%
+
+Percentage Improvements (All | Routed to MedRAG):
+(1st_agent -> 2nd_agent): 13.50%
+(1st_agent -> 3rd_agent): 13.68%
+
+Condition: Not Routed to MedRAG
+Row count: 276
+Average Total Hallucination Scores (All | Not Routed to MedRAG):
+FrontEndAgent (THS1): 6.05
+SecondLevelReviewer (THS2): 6.82
+ThirdLevelReviewer (THS3): 6.95
+
+MedRAG Top Score Summary:
+Recorded top score count: 0
+Average top score: n/a
+
+Percentage Improvements (All | Not Routed to MedRAG):
+Improvement (1st_agent -> 2nd_agent): 12.79%
+Improvement (2nd_agent -> 3rd_agent): 1.91%
+Improvement (1st_agent -> 3rd_agent): 14.94%
+
+Percentage Improvements (All | Not Routed to MedRAG):
+(1st_agent -> 2nd_agent): 12.79%
+(1st_agent -> 3rd_agent): 14.94%
+
+Condition: General + Routed to MedRAG
+Row count: 15
+Average Total Hallucination Scores (All | General + Routed to MedRAG):
+FrontEndAgent (THS1): 6.20
+SecondLevelReviewer (THS2): 7.03
+ThirdLevelReviewer (THS3): 6.60
+
+MedRAG Top Score Summary:
+Recorded top score count: 15
+Average top score: 0.694
+
+Percentage Improvements (All | General + Routed to MedRAG):
+Improvement (1st_agent -> 2nd_agent): 13.44%
+Improvement (2nd_agent -> 3rd_agent): -6.16%
+Improvement (1st_agent -> 3rd_agent): 6.45%
+
+Percentage Improvements (All | General + Routed to MedRAG):
+(1st_agent -> 2nd_agent): 13.44%
+(1st_agent -> 3rd_agent): 6.45%
+
+Condition: General + Not Routed to MedRAG
+Row count: 235
+Average Total Hallucination Scores (All | General + Not Routed to MedRAG):
+FrontEndAgent (THS1): 6.01
+SecondLevelReviewer (THS2): 6.84
+ThirdLevelReviewer (THS3): 6.90
+
+MedRAG Top Score Summary:
+Recorded top score count: 0
+Average top score: n/a
+
+Percentage Improvements (All | General + Not Routed to MedRAG):
+Improvement (1st_agent -> 2nd_agent): 13.65%
+Improvement (2nd_agent -> 3rd_agent): 0.96%
+Improvement (1st_agent -> 3rd_agent): 14.75%
+
+Percentage Improvements (All | General + Not Routed to MedRAG):
+(1st_agent -> 2nd_agent): 13.65%
+(1st_agent -> 3rd_agent): 14.75%
+
+Condition: Medical + Routed to MedRAG
+Row count: 209
+Average Total Hallucination Scores (All | Medical + Routed to MedRAG):
+FrontEndAgent (THS1): 6.15
+SecondLevelReviewer (THS2): 6.98
+ThirdLevelReviewer (THS3): 7.02
+
+MedRAG Top Score Summary:
+Recorded top score count: 209
+Average top score: 0.758
+
+Percentage Improvements (All | Medical + Routed to MedRAG):
+Improvement (1st_agent -> 2nd_agent): 13.50%
+Improvement (2nd_agent -> 3rd_agent): 0.62%
+Improvement (1st_agent -> 3rd_agent): 14.20%
+
+Percentage Improvements (All | Medical + Routed to MedRAG):
+(1st_agent -> 2nd_agent): 13.50%
+(1st_agent -> 3rd_agent): 14.20%
+
+Condition: Medical + Not Routed to MedRAG
+Row count: 41
+Average Total Hallucination Scores (All | Medical + Not Routed to MedRAG):
+FrontEndAgent (THS1): 6.24
+SecondLevelReviewer (THS2): 6.74
+ThirdLevelReviewer (THS3): 7.24
+
+MedRAG Top Score Summary:
+Recorded top score count: 0
+Average top score: n/a
+
+Percentage Improvements (All | Medical + Not Routed to MedRAG):
+Improvement (1st_agent -> 2nd_agent): 8.01%
+Improvement (2nd_agent -> 3rd_agent): 7.41%
+Improvement (1st_agent -> 3rd_agent): 16.02%
+
+Percentage Improvements (All | Medical + Not Routed to MedRAG):
+(1st_agent -> 2nd_agent): 8.01%
+(1st_agent -> 3rd_agent): 16.02%
