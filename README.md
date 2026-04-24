@@ -171,17 +171,7 @@ Important constraint:
 
 - `x` must be divisible by `10`, because the pipeline requires `x/2` prompts per domain and equal counts across 5 techniques
 
-## Example End-To-End Run
-
-From the project root:
-
-```bash
-python3 data/generate_general.py --workers 6
-python3 data/generate_medical.py --workers 6
-python3 preprocess_data.py 500
-```
-
-## Run The OVON Pipeline
+## Run The Multi-Agent Pipeline
 
 After creating `data/data.jsonl`, run the multi-agent pipeline:
 
@@ -218,7 +208,7 @@ python3 rerun_json_errors.py
 
 The repair script reruns only the failing `prompt_id` values, rewrites only the matching rows in `data/original_results.csv` or `data/medrag_original_results.csv`, and then rewrites `data/error.txt` with only the failures that remain.
 
-## Analyze OVON Results
+## Analyze Hallucination Results
 
 After the pipeline finishes, generate the plots and stats:
 
