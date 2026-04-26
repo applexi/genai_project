@@ -1,16 +1,12 @@
 Subset: Medical
-Row count: 250
 
-Average Total Hallucination Scores (Medical):
-FrontEndAgent (THS1): 6.50
-SecondLevelReviewer (THS2): 7.16
-ThirdLevelReviewer (THS3): 7.37
 
-Percentage Improvements (Medical):
-Improvement (1st_agent -> 2nd_agent): 10.19%
-Improvement (2nd_agent -> 3rd_agent): 2.96%
-Improvement (1st_agent -> 3rd_agent): 13.45%
+## Average THS Summary
+| Group | Rows | THS1 | THS2 | THS3 | Top Score Count | Avg Top Score |
+| --- | --- | --- | --- | --- | --- | --- |
+| Med | 250 | 6.50 | 7.16 | 7.37 | n/a | n/a |
 
-Percentage Improvements (Medical):
-(1st_agent -> 2nd_agent): 10.19%
-(1st_agent -> 3rd_agent): 13.45%
+## Percentage Improvements
+| Group | 1st -> 2nd (%) | 2nd -> 3rd (%) | 1st -> 3rd (%) |
+| --- | --- | --- | --- |
+| Med | 10.19 | 2.96 | 13.45 |

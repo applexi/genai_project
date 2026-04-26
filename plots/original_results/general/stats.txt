@@ -1,16 +1,12 @@
 Subset: General
-Row count: 250
 
-Average Total Hallucination Scores (General):
-FrontEndAgent (THS1): 5.97
-SecondLevelReviewer (THS2): 6.66
-ThirdLevelReviewer (THS3): 6.77
 
-Percentage Improvements (General):
-Improvement (1st_agent -> 2nd_agent): 11.56%
-Improvement (2nd_agent -> 3rd_agent): 1.65%
-Improvement (1st_agent -> 3rd_agent): 13.40%
+## Average THS Summary
+| Group | Rows | THS1 | THS2 | THS3 | Top Score Count | Avg Top Score |
+| --- | --- | --- | --- | --- | --- | --- |
+| Gen | 250 | 5.97 | 6.66 | 6.77 | n/a | n/a |
 
-Percentage Improvements (General):
-(1st_agent -> 2nd_agent): 11.56%
-(1st_agent -> 3rd_agent): 13.40%
+## Percentage Improvements
+| Group | 1st -> 2nd (%) | 2nd -> 3rd (%) | 1st -> 3rd (%) |
+| --- | --- | --- | --- |
+| Gen | 11.56 | 1.65 | 13.40 |

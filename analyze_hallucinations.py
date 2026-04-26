@@ -112,12 +112,137 @@ def write_stats_file(output_path: Path, lines: list[str]) -> None:
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def format_float(value: float | None, digits: int = 2) -> str:
+    if value is None or pd.isna(value):
+        return "n/a"
+    return f"{value:.{digits}f}"
+
+
+def build_markdown_table(headers: list[str], rows: list[list[str]]) -> list[str]:
+    header_line = "| " + " | ".join(headers) + " |"
+    separator_line = "| " + " | ".join(["---"] * len(headers)) + " |"
+    body_lines = ["| " + " | ".join(row) + " |" for row in rows]
+    return [header_line, separator_line, *body_lines]
+
+
+def short_subset_label(label: str) -> str:
+    mapping = {
+        "All": "All",
+        "General": "Gen",
+        "Medical": "Med",
+    }
+    return mapping.get(label, label)
+
+
 def normalize_routed_to_medrag(series: pd.Series) -> pd.Series:
     return series.map(
         lambda value: str(value).strip().lower() in {"true", "1", "yes"}
         if pd.notna(value)
         else False
     )
+
+
+def build_conditioned_subsets(
+    df_results: pd.DataFrame, subset_label: str
+) -> list[tuple[str, pd.DataFrame]]:
+    short_label = short_subset_label(subset_label)
+    conditioned_subsets: list[tuple[str, pd.DataFrame]] = [(short_label, df_results.copy())]
+    if "routed_to_medrag" not in df_results.columns:
+        return conditioned_subsets
+
+    df_with_route = df_results.copy()
+    df_with_route["routed_to_medrag_normalized"] = normalize_routed_to_medrag(
+        df_with_route["routed_to_medrag"]
+    )
+    conditioned_subsets.extend(
+        [
+            ("RAG", df_with_route[df_with_route["routed_to_medrag_normalized"]].copy()),
+            (
+                "Orig",
+                df_with_route[~df_with_route["routed_to_medrag_normalized"]].copy(),
+            ),
+        ]
+    )
+
+    if "source_domain" in df_with_route.columns:
+        present_domains = [
+            source_domain
+            for source_domain in ("general", "medical")
+            if (df_with_route["source_domain"] == source_domain).any()
+        ]
+        for source_domain in present_domains:
+            short_domain = "Gen" if source_domain == "general" else "Med"
+            for routed_value, routed_label in (
+                (True, "RAG"),
+                (False, "Orig"),
+            ):
+                conditioned_subsets.append(
+                    (
+                        f"{short_domain}+{routed_label}",
+                        df_with_route[
+                            (df_with_route["source_domain"] == source_domain)
+                            & (df_with_route["routed_to_medrag_normalized"] == routed_value)
+                        ].copy(),
+                    )
+                )
+    return conditioned_subsets
+
+
+def calculate_improvements_from_totals(total_ths: dict[str, float]) -> dict[str, float | None]:
+    ths1 = total_ths["FrontEndAgent (THS1)"]
+    ths2 = total_ths["SecondLevelReviewer (THS2)"]
+    ths3 = total_ths["ThirdLevelReviewer (THS3)"]
+
+    def safe_pct(new_value: float, old_value: float) -> float | None:
+        if pd.isna(new_value) or pd.isna(old_value) or old_value == 0:
+            return None
+        return ((new_value - old_value) / abs(old_value)) * 100
+
+    return {
+        "1st -> 2nd (%)": safe_pct(ths2, ths1),
+        "2nd -> 3rd (%)": safe_pct(ths3, ths2),
+        "1st -> 3rd (%)": safe_pct(ths3, ths1),
+    }
+
+
+def build_summary_table_rows(conditioned_subsets: list[tuple[str, pd.DataFrame]]) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for condition_label, conditioned_df in conditioned_subsets:
+        total_ths = total_ths_variant_two(conditioned_df)
+        if "top score" in conditioned_df.columns:
+            top_scores = pd.to_numeric(conditioned_df["top score"], errors="coerce")
+            top_score_count = int(top_scores.notna().sum())
+            average_top_score = top_scores.dropna().mean()
+        else:
+            top_score_count = None
+            average_top_score = None
+        rows.append(
+            [
+                condition_label,
+                str(len(conditioned_df)),
+                format_float(total_ths["FrontEndAgent (THS1)"]),
+                format_float(total_ths["SecondLevelReviewer (THS2)"]),
+                format_float(total_ths["ThirdLevelReviewer (THS3)"]),
+                "n/a" if top_score_count is None else str(top_score_count),
+                format_float(average_top_score, 3),
+            ]
+        )
+    return rows
+
+
+def build_improvement_table_rows(conditioned_subsets: list[tuple[str, pd.DataFrame]]) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for condition_label, conditioned_df in conditioned_subsets:
+        improvements = calculate_improvements_from_totals(total_ths_variant_two(conditioned_df))
+        rows.append(
+            [
+                condition_label,
+                format_float(improvements["1st -> 2nd (%)"]),
+                format_float(improvements["2nd -> 3rd (%)"]),
+                format_float(improvements["1st -> 3rd (%)"]),
+            ]
+        )
+    return rows
 
 
 def append_top_score_summary(stats_lines: list[str], df_results: pd.DataFrame) -> None:
@@ -418,7 +543,8 @@ def run_analysis_for_subset(
         return
 
     subset_plots_dir = plots_dir / subset_key
-    stats_lines = [f"Subset: {subset_label}", f"Row count: {len(df_results)}", ""]
+    conditioned_subsets = build_conditioned_subsets(df_results, subset_label)
+    stats_lines = [f"Subset: {subset_label}", ""]
 
     plot_line_chart(df_results, subset_plots_dir, subset_label)
     plot_grouped_bar_sorted_by_ths1(df_results, subset_plots_dir, subset_label)
@@ -426,24 +552,25 @@ def run_analysis_for_subset(
     plot_total_ths_annotated(df_results, subset_plots_dir, subset_label)
     plot_total_ths_simple(df_results, subset_plots_dir, subset_label)
 
-    total_ths = total_ths_variant_two(df_results)
-    print(f"Average Total Hallucination Scores ({subset_label}):")
-    stats_lines.append(f"Average Total Hallucination Scores ({subset_label}):")
-    improvements_all = calculate_percentage_ths_improvement_all(total_ths)
-    for label, value in total_ths.items():
-        line = f"{label}: {value:.2f}"
-        print(line)
-        stats_lines.append(line)
-
-    print(f"Percentage Improvements ({subset_label}):")
     stats_lines.append("")
-    stats_lines.append(f"Percentage Improvements ({subset_label}):")
-    for label, value in improvements_all.items():
-        line = f"{label}: {value:.2f}%"
-        print(line)
-        stats_lines.append(line)
+    stats_lines.append("## Average THS Summary")
+    stats_lines.extend(
+        build_markdown_table(
+            [
+                "Group",
+                "Rows",
+                "THS1",
+                "THS2",
+                "THS3",
+                "Top Score Count",
+                "Avg Top Score",
+            ],
+            build_summary_table_rows(conditioned_subsets),
+        )
+    )
+
     plot_percentage_improvements(
-        improvements_all,
+        calculate_percentage_ths_improvement_all(total_ths_variant_two(df_results)),
         subset_plots_dir,
         "06_percentage_improvements_all.png",
         ["blue", "orange", "green"],
@@ -451,23 +578,23 @@ def run_analysis_for_subset(
         subset_label,
     )
 
-    improvements_frontend = calculate_percentage_ths_improvement_frontend_paths(total_ths)
-    print(f"Percentage Improvements ({subset_label}):")
     stats_lines.append("")
-    stats_lines.append(f"Percentage Improvements ({subset_label}):")
-    for label, value in improvements_frontend.items():
-        line = f"{label}: {value:.2f}%"
-        print(line)
-        stats_lines.append(line)
+    stats_lines.append("## Percentage Improvements")
+    stats_lines.extend(
+        build_markdown_table(
+            ["Group", "1st -> 2nd (%)", "2nd -> 3rd (%)", "1st -> 3rd (%)"],
+            build_improvement_table_rows(conditioned_subsets),
+        )
+    )
+
     plot_percentage_improvements(
-        improvements_frontend,
+        calculate_percentage_ths_improvement_frontend_paths(total_ths_variant_two(df_results)),
         subset_plots_dir,
         "07_percentage_improvements_frontend_paths.png",
         ["green", "orange", "blue"],
         0,
         subset_label,
     )
-    append_medrag_conditioned_stats(stats_lines, df_results, subset_label)
     write_stats_file(subset_plots_dir / "stats.txt", stats_lines)
 
 

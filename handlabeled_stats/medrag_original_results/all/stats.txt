@@ -1,0 +1,14 @@
+Subset: All
+
+Hallucination label uses `1 = hallucination` and `0 = not hallucination`, so factuality is reported as `1 - hallucination rate`.
+
+## Hand-Labeled Summary
+| Group | Rows | Labeled Rows | Avg Factuality | Avg Helpfulness (0-5) | Hallucination Rate |
+| --- | --- | --- | --- | --- | --- |
+| All | 500 | 50 | 0.660 | 3.200 | 0.340 |
+| RAG | 224 | 25 | 0.600 | 3.040 | 0.400 |
+| Orig | 276 | 25 | 0.720 | 3.360 | 0.280 |
+| Gen+RAG | 15 | 0 | n/a | n/a | n/a |
+| Gen+Orig | 235 | 25 | 0.720 | 3.360 | 0.280 |
+| Med+RAG | 209 | 25 | 0.600 | 3.040 | 0.400 |
+| Med+Orig | 41 | 0 | n/a | n/a | n/a |
