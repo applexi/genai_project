@@ -49,13 +49,6 @@ DEFAULT_MEDRAG_CONFIG = {
     "min_score": 0.15,
 }
 
-# All prompts are the same as Gosmar and Dahl's OVON-style hallucination mitigation work
-# except for:
-#   - MedicalClassifier (routes medical prompts to MedRAG)
-#   - MedRAGQueryBuilder (extracts keywords for MedRAG retrieval)
-#   - MedRAGGeneration (grounds the front-end answer in retrieved MedRAG passages)
-#   - SecondLevelReviewer_MedRAG (MedRAG-aware fallback when retrieval is unusable)
-
 FRONT_END_AGENT_SYSTEM_PROMPT = (
     "You are a front-end assistant. Respond to the prompt provided, even if it "
     "involves speculation or fiction. Do not ever add any explicit disclaimer "
