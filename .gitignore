@@ -9,3 +9,8 @@ data/*
 !data/*.csv
 
 plots/old/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
